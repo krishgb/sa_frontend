@@ -217,6 +217,7 @@ function NavLinks({title, links}){
                     minW="0" 
                     w={'150px'}
                     zIndex={2}
+                    backgroundColor={'gray.700'}
                 >
                     {
                         links.map((link, index) => (
@@ -226,7 +227,8 @@ function NavLinks({title, links}){
                                 _hover={{backgroundColor: '#000'}}
                                 onClick={() => setIsOpen(false)}
                                 zIndex={2}
-                            >
+                                backgroundColor={'gray.700'}
+                    >
                                 <Link to={link.to}>{link.name}</Link>
                             </MenuItem>
                         ))

@@ -1,15 +1,14 @@
-import { ArrowBackIcon, ChevronRightIcon } from '@chakra-ui/icons'
+import {  ChevronRightIcon } from '@chakra-ui/icons'
 import { Flex } from '@chakra-ui/react'
 import React from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 export default function PageHead({pages}) {
-    const route = useNavigate()
+    // const route = useNavigate()
+    // const go_back = () => { route(-1)}
 
-    const go_back = () => { route(-1)}
   return (
     <Flex alignItems={'center'} gap={4} paddingLeft={'5'} pt='.5rem' mb={5}>
-        <ArrowBackIcon onClick={go_back} cursor={'pointer'} />
         <Flex>
             {
                 pages.map(({title, link}, index) => {

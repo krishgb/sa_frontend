@@ -10,6 +10,7 @@ const header_keys = [
   { key: 'name', title: 'Name' },
   { key: 'roll_no', title: 'Roll no' },
   { key: 'sem', title: 'Sem' },
+  { key: 'branch', title: 'Branch' },
   { key: 'from', title: 'From' },
   { key: 'to', title: 'To' },
   { key: 'status', title: 'Status' },
@@ -20,6 +21,7 @@ const download_keys = [
   { key: 'name', title: 'Name' },
   { key: 'roll_no', title: 'Roll no' },
   { key: 'sem', title: 'Sem' },
+  { key: 'branch', title: 'Branch' },
   { key: 'from', title: 'From' },
   { key: 'to', title: 'To' },
   { key: 'status', title: 'Status' },
@@ -29,6 +31,7 @@ const filter_keys = [
     { key: 'sem', title: 'Sem' },
     { key: 'from', title: 'From' },
     { key: 'to', title: 'To' },
+    { key: 'branch', title: 'Branch' },
     { key: 'status', title: 'Status' },
 ]
   
@@ -110,12 +113,12 @@ export default function Transfer() {
                       backgroundColor={'#fff'}
                       cursor={'pointer'}
                     >
-                      <option style={{color: 'white'}} value='option1'>2023-2024</option>
-                      <option style={{color: 'white'}} value='option1'>2023-2024</option>
-                      <option style={{color: 'white'}} value='option1'>2023-2024</option>
-                      <option style={{color: 'white'}} value='option1'>2023-2024</option>
-                      <option style={{color: 'white'}} value='option1'>2023-2024</option>
-                      <option style={{color: 'white'}} value='option1'>2023-2024</option>
+                      <option style={{color: 'white', backgroundColor: '#2D3748'}} value='option1'>2023-2024</option>
+                      <option style={{color: 'white', backgroundColor: '#2D3748'}} value='option1'>2023-2024</option>
+                      <option style={{color: 'white', backgroundColor: '#2D3748'}} value='option1'>2023-2024</option>
+                      <option style={{color: 'white', backgroundColor: '#2D3748'}} value='option1'>2023-2024</option>
+                      <option style={{color: 'white', backgroundColor: '#2D3748'}} value='option1'>2023-2024</option>
+                      <option style={{color: 'white', backgroundColor: '#2D3748'}} value='option1'>2023-2024</option>
                     </Select>
                   </Flex>
 
@@ -147,12 +150,12 @@ export default function Transfer() {
                       backgroundColor={'#fff'}
                       cursor={'pointer'}
                     >
-                      <option style={{color: 'white'}} value='option1'>5</option>
-                      <option style={{color: 'white'}} value='option1'>5</option>
-                      <option style={{color: 'white'}} value='option1'>5</option>
-                      <option style={{color: 'white'}} value='option1'>5</option>
-                      <option style={{color: 'white'}} value='option1'>5</option>
-                      <option style={{color: 'white'}} value='option1'>15</option>
+                      <option style={{color: 'white', backgroundColor: '#2D3748'}} value='option1'>5</option>
+                      <option style={{color: 'white', backgroundColor: '#2D3748'}} value='option1'>5</option>
+                      <option style={{color: 'white', backgroundColor: '#2D3748'}} value='option1'>5</option>
+                      <option style={{color: 'white', backgroundColor: '#2D3748'}} value='option1'>5</option>
+                      <option style={{color: 'white', backgroundColor: '#2D3748'}} value='option1'>5</option>
+                      <option style={{color: 'white', backgroundColor: '#2D3748'}} value='option1'>15</option>
                     </Select>
                   </Flex>
 
@@ -185,8 +188,8 @@ export default function Transfer() {
                       backgroundColor={'#fff'}
                       cursor={'pointer'}
                     >
-                      <option style={{color: 'white'}} value='option1'>Odd</option>
-                      <option style={{color: 'white'}} value='option1'>Even</option>
+                      <option style={{color: 'white', backgroundColor: '#2D3748'}} value='option1'>Odd</option>
+                      <option style={{color: 'white', backgroundColor: '#2D3748'}} value='option1'>Even</option>
                     </Select>
                   </Flex>
                 </Flex>

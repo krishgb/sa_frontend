@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useReducer, useRef, useState } from 'react'
+import React, { lazy, useCallback, useEffect, useReducer, useRef, useState, Suspense } from 'react'
 import { TableContainer, Table as CTable, Thead, Tbody, Th, Tr, Td, Grid, Text, Checkbox, Input, Highlight, Flex, IconButton, Badge, Select, Menu, MenuButton, MenuList, MenuItem } from '@chakra-ui/react'
 import { trie } from '@/lib/trie'
 import { to_csv } from '@/lib/csv'
 import { CloseIcon, DownloadIcon } from '@chakra-ui/icons'
+const FilterMenu = lazy(() => import('./FilterMenu'))
 
 const reducer = (state, action) => {
     switch (action.type) {
@@ -71,7 +72,6 @@ export default function Table({ keys, data, download_keys, filter_keys, children
     const [headers, set_headers] = useState(keys || [])
     const [filters, set_filters] = useState(filter_keys || [])
     const [trie_ds, set_trie_ds] = useState(null)
-    const observe = useRef(null)
     const input_ref = useRef(null)
 
     useEffect(() => {
@@ -90,7 +90,8 @@ export default function Table({ keys, data, download_keys, filter_keys, children
         set_trie_ds(trie_ds)
 
     }, [keys, data])
-
+    
+    const observe = useRef(null)
     const refElement = useCallback(node => {
         if (observe.current) observe.current.disconnect()
         observe.current = new IntersectionObserver(entries => {
@@ -106,7 +107,7 @@ export default function Table({ keys, data, download_keys, filter_keys, children
         if (trie_ds === null) return
         if (t) clearTimeout(t)
         setTimeout(() => {
-            const value = e.target.value
+            const value = e.target.value.toLowerCase()
             if (value.trim().length === 0) {
                 e.target.value = ''
                 return dispatch({ type: 'visible', data: state.all_data })
@@ -167,23 +168,24 @@ export default function Table({ keys, data, download_keys, filter_keys, children
 
             </Grid>
 
-            <Flex gap={4}>
+            {/* <Flex gap={4}>
                 {
                     filters.map((filter, index) => (
-                        <FilterMenu 
-                            key={index} 
-                            filter={filter} 
-                            visible={state.visible} 
-                            dispatch={(data) => {
-                                dispatch({type: 'visible', data})
-                            }}
-                        />
+                        <Suspense key={index} fallback={<></>}>
+                            <FilterMenu 
+                                filter={filter} 
+                                visible={state.visible} 
+                                dispatch={(data) => {
+                                    dispatch({type: 'visible', data})
+                                }}
+                            />
+                        </Suspense>
                     ))
 
 
 
                 }
-            </Flex>
+            </Flex> */}
 
 
 
@@ -195,7 +197,7 @@ export default function Table({ keys, data, download_keys, filter_keys, children
                         <Flex gap={4}>
                             <Text fontSize={'13px'} color={'#666'}>
                                 Showing <Badge
-                                    colorScheme='twitter'
+                                    color='twitter.200'
                                     backgroundColor={'#081b4b'}
                                 >{state.visible.length}
                                 </Badge> of <Badge
@@ -209,7 +211,7 @@ export default function Table({ keys, data, download_keys, filter_keys, children
                                 state.selected.length ?
                                     <Text fontSize={'13px'} color={'#666'}>
                                         | &nbsp;&nbsp;&nbsp;<Badge
-                                            colorScheme='twitter'
+                                            color='twitter.200'
                                             backgroundColor={'#081b4b'}
                                         >{state.selected.length}
                                         </Badge> selected
@@ -329,140 +331,3 @@ export default function Table({ keys, data, download_keys, filter_keys, children
     )
 }
 
-
-function FilterMenu({ filter, visible, dispatch }) {
-    const [isOpen, setIsOpen] = useState(false)
-    const [selected, set_selected] = useState()
-    const [all, set_all] = useState([])
-
-    const map = new Map()
-
-    const init = () => {
-        for (let i = 0; i < visible.length; i++) {
-            const current = visible[i]
-            const value = current[filter.key]
-            if (!map.has(value)) {
-                map.set(value, new Set([current._idx]))
-            } else {
-                map.get(value).add(current._idx)
-            }
-        }
-        set_selected([...map.keys()])
-        set_all([...map.keys()])
-    }
-
-    useEffect(() => {
-        init()
-        console.log([...map.keys()]);
-    }, [visible])
-
-    const add_or_remove = (checked, value) => {
-        const new_selected = new Set()
-        if(checked) {
-            new_selected.add(value)
-        }else{
-            new_selected.delete(value)
-        }
-        set_selected([...new_selected])
-    }
-
-    const submit = () => {
-        const new_visible = new Set()
-        for(let i = 0; i < visible.length; i++) {
-            for(let s of selected){
-                new_visible.add([...map.get(s)])
-            }
-        }
-        dispatch([...new_visible])  
-
-        setIsOpen(false)
-    }
-
-    const toggle = () => { setIsOpen(!isOpen) }
-
-    return (
-
-        <Menu isOpen={isOpen}>
-            <MenuButton
-                borderRadius={'5px'}
-                backgroundColor={'#081b4b'}
-                onClick={toggle}
-            >
-                <Flex alignItems={'center'} p={2} gap={2}>
-                    <Text fontSize={'13px'} color='white'>{filter.title}</Text>
-                    <Text fontSize={'13px'} color={'white'}>{ } selected</Text>
-                </Flex>
-            </MenuButton>
-            <MenuList
-
-            >
-                <MenuItem
-                    display={'flex'}
-                    flexDirection={'column'}
-                    h='200px'
-                    overflowY={'scroll'}
-                    pos='relative'
-                    resize='both'
-                >
-                    {/* <Text
-                        backgroundColor={'red'} 
-                        px={1} 
-                        pos='fixed' 
-                        top={'10px'}
-                        right={'-60px'}
-                        borderRadius={'5px'}
-                        fontSize={'13px'}
-                        color='white'
-                        onClick={close} 
-                    >Close</Text> */}
-
-                    {
-                       all.map((i, idx) => {
-                            return (
-                             <Checkbox
-                                key={idx}
-                                  color={'white'}
-                                  size={'sm'}
-                                  w='100%'
-                                  defaultChecked={true}
-                                  onChange={e => {add_or_remove(e.target.checked, i)}}
-                             >
-                                  <Text
-                                        fontSize={'14px'}
-                                        color='white'
-                                  >
-                                        {i}
-                                  </Text>
-                             </Checkbox>
-                            )
-                        })
-                    }
-
-                    {/* {
-                        Array(500).map((i, idx) => <Checkbox key={idx}>HEllo</Checkbox>)
-                    } */}
-                </MenuItem>
-
-                <MenuItem
-                    backgroundColor={'#081b4b80'}
-                    w='50%'
-                    m='auto'
-                    borderRadius={'5px'}
-                    _hover={{
-                        transform: 'scale(1.05)',
-                        backgroundColor: '#081b4b'
-                    }}
-                    onClick={submit}
-                >
-                    <Text 
-                        color='white'
-                        fontSize={'13px'}
-                        m='auto'
-                    >
-                        Okay
-                    </Text>
-                </MenuItem>
-            </MenuList>
-        </Menu>
-    )
-}

@@ -6,6 +6,7 @@ import Loading from './ui/Loading/Loading'
 import Layout from './ui/Layout/Layout'
 
 const Transfer = lazy(() => import('@/pages/Transfer/Transfer'))
+const TransferNew = lazy(() => import('@/pages/Transfer/New/TransferNew'))
 
 export default function App() {
   return (
@@ -45,10 +46,10 @@ export default function App() {
               }
               />
               
-            <Route path='/'
+            <Route path='/t/new'
               element={
                 <Loader>
-                  <Header />
+                  <TransferNew />
                 </Loader>
               }
             />
