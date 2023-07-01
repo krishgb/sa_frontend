@@ -1,9 +1,11 @@
 import React, { Suspense, lazy, useCallback, useEffect, useReducer } from 'react'
 import Loading from '@/ui/Loading/Loading'
-import { Badge, Button, Flex, Grid, Input, Modal, Spinner, Table, TableContainer, Tbody, Td, Text, Th, Thead, Tr, useToast } from '@chakra-ui/react'
-import { AttachmentIcon, SpinnerIcon } from '@chakra-ui/icons'
+import { Badge, Button, Flex, Grid, Image, Input, Menu, MenuButton, MenuItem, MenuList, Modal, Spinner, Table, TableContainer, Tbody, Td, Text, Th, Thead, Tr, useToast } from '@chakra-ui/react'
+import { AttachmentIcon, ChevronDownIcon, DeleteIcon, DragHandleIcon, EditIcon, SpinnerIcon } from '@chakra-ui/icons'
 import { useState, useRef } from 'react'
-import AddDataModal from './AddDataModal'
+const AddDataModal = lazy(() => import('./AddDataModal'))
+const EditDataModal = lazy(() => import('./EditDataModal'))
+// import AddDataModal from './AddDataModal'
 import remove_runes from '@/lib/remove_runes'
 
 // LINE 74, 118
@@ -14,12 +16,11 @@ const file_types = ['text/csv', 'application/vnd.ms-excel', 'application/vnd.ope
 const reducer = (state, action) => {
     switch (action.type) {
         case 'add': {
-            console.log(action);
             const data = action.payload
             const new_data = state.all_data.concat(data)
             return {
                 all_data: new_data,
-                visible: new_data.slice(0, 50)
+                visible: new_data.slice(0, 100)
             }
         }
         case 'add_one': {
@@ -34,7 +35,7 @@ const reducer = (state, action) => {
         case 'more': {
             const len = state.visible.length
             if (len === state.all_data.length) return state
-            const more = state.all_data.slice(len, len + 50)
+            const more = state.all_data.slice(len, len + 100)
             return {
                 ...state,
                 visible: state.visible.concat(more)
@@ -45,6 +46,31 @@ const reducer = (state, action) => {
                 all_data: [],
                 visible: []
             }
+        }
+        case 'remove': {
+            const id = action.payload
+            const all_data = state.all_data.filter((v) => v.id !== id)
+            const visible = state.visible.filter((v) => v.id !== id)
+            return {
+                all_data,
+                visible
+            }
+        }
+        case 'edit': {
+            let idx = 0
+            for(let i = 0; i < state.all_data.length; i++) {
+                if(state.all_data[i].id === action.payload.id) {
+                    idx = i
+                    break
+                }
+            }
+            state.all_data[idx] = action.payload
+            state.visible[idx] = action.payload
+            return {
+                all_data: state.all_data,
+                visible: state.visible
+            }
+
         }
         default: {
             return state
@@ -107,10 +133,17 @@ export default function TransferNew() {
         dispatch({ type: 'add_one', payload })
     }
 
+    const edit = (data) => {
+        dispatch({type: 'edit', payload: data})
+    }
+
+    const remove = (id) => {
+        dispatch({ type: 'remove', payload: id })
+    }
+
     const upload_ref = useRef(null)
     useEffect(() => {
         if (!file) return
-        console.log(file);
         get_data_from_xl()
         upload_ref.current.value = ''
     }, [file])
@@ -147,7 +180,9 @@ export default function TransferNew() {
                 </Text>
 
                 <Flex gap={4} fontSize={'14px'} alignItems={'center'}>
-                    <AddDataModal add_one={add_one} />
+                    <Suspense fallback={<Spinner />}>
+                        <AddDataModal add_one={add_one} />
+                    </Suspense>
 
                     <Button
                         display={'flex'}
@@ -155,13 +190,13 @@ export default function TransferNew() {
                         colorScheme='green'
                         backgroundColor={'green.200'}
                         color='gray.800'
-                        _hover={{backgroundColor: 'green.300'}}
+                        _hover={{ backgroundColor: 'green.300' }}
                         onClick={() => { upload_ref?.current?.click() }}
                     >
                         <AttachmentIcon />
                         Upload a file
                         <Input
-                            onChange={(e) => { console.log("object");set_file(e.target.files[0]) }}
+                            onChange={(e) => { set_file(e.target.files[0]) }}
                             // oncli
                             display={'none'}
                             ref={upload_ref}
@@ -211,7 +246,7 @@ export default function TransferNew() {
                     borderRadius={'md'}
                     border='1px solid #ccc'
                     className='scroll-bar'
-
+                    resize={'both'}
                 >
                     <Table
                         size={'sm'}
@@ -352,7 +387,32 @@ export default function TransferNew() {
                                                 <Td
                                                     outline='1px solid #cccccc50'
                                                     fontSize={'13px'}
+                                                    display={'flex'}
+                                                    alignItems={'center'}
+                                                    gap={2}
                                                 >
+                                                    <Menu matchWidth>
+                                                        <MenuButton w='5px'>
+                                                            <Image m='auto' cursor={'pointer'} src='/images/three_dots.svg' width='3px' />
+                                                        </MenuButton>
+                                                        <MenuList backgroundColor={'gray.700'} minW={'0'} w={'90px'} >
+                                                            <Suspense fallback={<Spinner />}>
+                                                                <EditDataModal data={state.all_data.filter(i => i.id === v.id)[0]} action={edit} />
+                                                            </Suspense>
+
+                                                            <MenuItem onClick={() => remove(v.id)} color='white' display={'flex'} gap={2} backgroundColor={'gray.700'} _hover={{backgroundColor: 'black'}}>
+                                                                <DeleteIcon
+                                                                    __css={{
+                                                                        g: {
+                                                                            fill: 'white',
+                                                                            stroke: 'black'
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                Delete
+                                                            </MenuItem>
+                                                        </MenuList>
+                                                    </Menu>
                                                     {idx + 1}
                                                 </Td>
                                                 <Td

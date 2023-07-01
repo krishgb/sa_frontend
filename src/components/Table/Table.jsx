@@ -1,9 +1,10 @@
-import React, { lazy, useCallback, useEffect, useReducer, useRef, useState, Suspense } from 'react'
+import React, { lazy, useCallback, useEffect, useReducer, useRef, useState, Suspense, Fragment } from 'react'
 import { TableContainer, Table as CTable, Thead, Tbody, Th, Tr, Td, Grid, Text, Checkbox, Input, Highlight, Flex, IconButton, Badge, Select, Menu, MenuButton, MenuList, MenuItem } from '@chakra-ui/react'
 import { trie } from '@/lib/trie'
 import { to_csv } from '@/lib/csv'
-import { CloseIcon, DownloadIcon } from '@chakra-ui/icons'
-const FilterMenu = lazy(() => import('./FilterMenu'))
+import { DownloadIcon, EditIcon } from '@chakra-ui/icons'
+const TableHead = lazy(() => import('./TableHead'))
+const TableRow = lazy(() => import('./TableRow'))
 
 const reducer = (state, action) => {
     switch (action.type) {
@@ -12,14 +13,14 @@ const reducer = (state, action) => {
             return {
                 all_data: data,
                 visible: data,
-                visible_rows: data.slice(0, 50) || [],
+                visible_rows: data.slice(0, 100) || [],
                 selected: [],
             }
         }
         case 'more': {
             const current_length = state.visible_rows.length
             if (current_length === state.visible.length) return state
-            const new_data = state.visible.slice(current_length, current_length + 50)
+            const new_data = state.visible.slice(current_length, current_length + 100)
             return {
                 ...state,
                 visible_rows: state.visible_rows.concat(new_data)
@@ -29,7 +30,7 @@ const reducer = (state, action) => {
             return {
                 ...state,
                 visible: action.data,
-                visible_rows: action?.data?.slice(0, 50) || [],
+                visible_rows: action?.data?.slice(0, 100) || [],
                 selected: []
             }
         }
@@ -67,12 +68,17 @@ const reducer = (state, action) => {
     }
 }
 
-export default function Table({ keys, data, download_keys, filter_keys, children }) {
+export default function Table({ keys, data, download_keys, filter_keys, children, edit_fn }) {
     const [state, dispatch] = useReducer(reducer, { all_data: [], visible: [], visible_rows: [], selected: [] })
     const [headers, set_headers] = useState(keys || [])
     const [filters, set_filters] = useState(filter_keys || [])
     const [trie_ds, set_trie_ds] = useState(null)
+    const [tries, set_tries] = useState([])
+    const [indices, set_indices] = useState([])
     const input_ref = useRef(null)
+
+    const refs = headers.map(() => useRef(null))
+
 
     useEffect(() => {
         set_headers(keys)
@@ -83,12 +89,22 @@ export default function Table({ keys, data, download_keys, filter_keys, children
         const received = data || []
         for (let i = 0; i < received.length; i++) {
             for (let key of Object.keys(keys)) {
-                const str = String(received[i][keys[key].key]).toLowerCase()
+                const str = String(received[i][keys[key].key]).trim().toLowerCase()
                 trie_ds.insert(str, i)
             }
         }
         set_trie_ds(trie_ds)
 
+        const tries = headers.map(() => trie())
+        for(let i = 0; i < received.length; i++){
+            for(let j = 0; j < headers.length; j++){
+                const str = String(received[i][headers[j].key]).trim().toLowerCase()
+                tries[j].insert(str, i)
+            }
+        }
+        set_tries(tries)
+
+        set_indices(received.map((_, idx) => idx))
     }, [keys, data])
     
     const observe = useRef(null)
@@ -119,7 +135,50 @@ export default function Table({ keys, data, download_keys, filter_keys, children
                 new_table_data.push(state.all_data[search_result[i]])
             }
             dispatch({ type: 'visible', data: new_table_data })
-        }, 100)
+        }, 0)
+    }
+
+    let ti = null
+    const th_change = () => {
+        if(ti) clearTimeout(ti)
+        ti = setTimeout(() => {
+            const values = refs.map(i => i.current.value.trim().toLowerCase())
+            const _indices = []
+
+            // console.log(values);
+
+            for(let i = 0; i < values.length; i++){
+                const result = tries[i].search(values[i])
+                _indices.push(result)
+            }
+            // console.log(_indices);
+
+            const intersected = [...indices]
+            for(let i = 0; i < _indices.length; i++){
+                const curr = _indices[i]
+                // if(curr.length === 0) continue
+
+                if(curr.at(-1) < intersected[0]) continue
+                
+                const new_intersected = []
+                let j = 0, k = 0
+                while(j < intersected.length && k < curr.length){
+                    if(intersected[j] === curr[k]){
+                        new_intersected.push(intersected[j])
+                        j++
+                        k++
+                    }else if(intersected[j] < curr[k]){
+                        j++
+                    }else{
+                        k++
+                    }
+                }
+
+                intersected.splice(0, intersected.length, ...new_intersected)
+            }
+            const data = intersected.map(i => state.all_data[i])
+            dispatch({type: 'visible', data})
+        }, 200)
     }
 
     const download_ref = useRef(null)
@@ -128,6 +187,14 @@ export default function Table({ keys, data, download_keys, filter_keys, children
         download_ref.current.href = url
         download_ref.current.click()
     }
+
+    const select_dispatch = (selected, idx) => {
+        dispatch({ selected, type: 'select', idx })
+    }
+
+    useEffect(() => {
+        console.log("All DATA changed");
+    }, [state])
 
 
     return (
@@ -201,7 +268,7 @@ export default function Table({ keys, data, download_keys, filter_keys, children
                                     backgroundColor={'#081b4b'}
                                 >{state.visible.length}
                                 </Badge> of <Badge
-                                    colorScheme='twitter'
+                                    color='twitter.200'
                                     backgroundColor={'#081b4b'}
                                 >{state.all_data.length}
                                 </Badge> entries
@@ -229,6 +296,7 @@ export default function Table({ keys, data, download_keys, filter_keys, children
                             borderRadius={'md'}
                             border='1px solid #ccc'
                             className='scroll-bar'
+                            resize={'both'}
                         >
                             <CTable
                                 size={'sm'}
@@ -244,6 +312,15 @@ export default function Table({ keys, data, download_keys, filter_keys, children
                                             backgroundColor={'#0069ff'}
                                             outline={'1px solid #ccc'}
                                             color='white'
+                                            zIndex={1}
+                                        ></Th>
+                                        <Th
+                                            position={'sticky'}
+                                            top={0}
+                                            backgroundColor={'#0069ff'}
+                                            outline={'1px solid #ccc'}
+                                            color='white'
+                                            zIndex={1}
                                         >
                                             <Checkbox
                                                 backgroundColor={'#eee'}
@@ -254,19 +331,20 @@ export default function Table({ keys, data, download_keys, filter_keys, children
                                             #
                                         </Th>
                                         {
-                                            headers.map((header, index) => (
-                                                <Th
-                                                    position={'sticky'}
-                                                    top={'0'}
-                                                    key={index}
-                                                    p={'.4rem'}
-                                                    backgroundColor={'#0069ff'}
-                                                    outline={'1px solid #ccc'}
-                                                    color='white'
-                                                >
-                                                    {header.title}
-                                                </Th>
-                                            ))
+                                            headers.map((header, index) => {
+                                                return (
+                                                    <Suspense key={index} fallback={<Th>Loading...</Th>}>
+                                                        <TableHead 
+                                                            title={header.title}
+                                                            accessor={header.key}
+                                                            data={state.all_data}
+                                                            action={th_change}
+                                                            ref={refs[index]}
+                                                        />
+                                                    </Suspense>
+                                                )
+
+                                                })
                                         }
                                     </Tr>
                                 </Thead>
@@ -274,47 +352,15 @@ export default function Table({ keys, data, download_keys, filter_keys, children
                                 <Tbody>
                                     {
                                         state.visible_rows.map((row, index) => {
-                                            const ref = state.visible_rows.length === index + 30 ? refElement : null
+                                            const ref = state.visible_rows.length === index + 50 ? refElement : null
                                             return (
-                                                <Tr key={index} ref={ref}>
-                                                    <Td
-                                                        outline='1px solid #cccccc50'
-                                                        fontSize={'12px'}
-                                                        display={'flex'}
-                                                        gap={1}
+                                                <Fragment key={index}>
+                                                    
+                                                    <Suspense fallback={<tr><td>Loading...</td></tr>}>
+                                                        <TableRow ref={ref} row={row} dispatch_fn={select_dispatch} headers={headers} highlight_value={input_ref?.current?.value || ''} sno={index+1} edit_fn={edit_fn} />
+                                                    </Suspense>
+                                                </Fragment>
 
-                                                    >
-                                                        <Checkbox
-                                                            backgroundColor={'#ccc'}
-                                                            borderRadius={'2px'}
-                                                            onChange={(e) => {
-                                                                dispatch({ selected: e.target.checked, type: 'select', idx: row._idx })
-                                                            }}
-                                                            isChecked={row._checked}
-                                                            zIndex={0}
-                                                        />
-                                                        {index + 1}
-                                                    </Td>
-                                                    {
-                                                        headers.map((header, index) => {
-                                                            return (
-                                                                <Td
-                                                                    outline='1px solid #cccccc50'
-                                                                    key={index}
-                                                                    fontSize={'13px'}
-
-                                                                >
-                                                                    <Highlight
-                                                                        query={input_ref?.current?.value || ''}
-                                                                        styles={{ px: '1', py: '1', bg: 'orange.100' }}
-                                                                    >
-                                                                        {`${row[header.key] || ''}`}
-                                                                    </Highlight>
-                                                                </Td>
-                                                            )
-                                                        })
-                                                    }
-                                                </Tr>
                                             )
                                         })
                                     }
@@ -330,4 +376,5 @@ export default function Table({ keys, data, download_keys, filter_keys, children
         </Grid>
     )
 }
+
 

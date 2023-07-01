@@ -1,9 +1,11 @@
 export const trie = () => {
     const ds = new Map()
     ds.set('root', new Map())
+    const indices = new Set()
 
     return {
         insert:(words, idx) => {
+            indices.add(idx)
             const ins = (word) => {
                 let node = ds.get('root')
             
@@ -28,6 +30,9 @@ export const trie = () => {
         search: (word) => {
             let m = ds.get('root')
             let prev = null
+            if(!word || word === '') {
+                return [...indices]
+            }
             for(let i = 0; i < word.length; i++) {
                 const letter = word[i]
                 if(m.has(letter)) {

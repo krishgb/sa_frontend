@@ -1,10 +1,9 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react'
 import Loading from '@/ui/Loading/Loading'
 import {rows} from '@/pages/transfer/View/data'
-import { Box, Container, Flex, Grid, Input, Select, Text } from '@chakra-ui/react'
+import { Box, Flex, Select, Text } from '@chakra-ui/react'
 
-const PageHead = lazy(() => import('@/ui/PageHead/PageHead'))
-const  Table = lazy(() => import('@/components/Table/Table'))
+
 
 const header_keys = [
   { key: 'name', title: 'Name' },
@@ -37,6 +36,9 @@ const filter_keys = [
   
 
 export default function Transfer() {
+  const PageHead = lazy(() => import('@/ui/PageHead/PageHead'))
+  const  Table = lazy(() => import('@/components/Table/Table'))
+  
   const [data, set_data] = useState([])
 
   useEffect(() => {
@@ -47,6 +49,9 @@ export default function Transfer() {
   }, [])
 
 
+  const edit_fn = (index) => {
+    console.log(index, data[index]);
+  }
   
 
 
@@ -80,6 +85,7 @@ export default function Transfer() {
                 keys={header_keys} 
                 download_keys={download_keys}
                 filter_keys={filter_keys}
+                edit_fn={edit_fn}
               >
                 <Flex
                   gap={6}

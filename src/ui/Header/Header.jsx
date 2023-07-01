@@ -228,8 +228,10 @@ function NavLinks({title, links}){
                                 onClick={() => setIsOpen(false)}
                                 zIndex={2}
                                 backgroundColor={'gray.700'}
+                                as={Link}
+                                to={link.to}
                     >
-                                <Link to={link.to}>{link.name}</Link>
+                                {link.name}
                             </MenuItem>
                         ))
                     }
